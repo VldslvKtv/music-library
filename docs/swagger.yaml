@@ -1,0 +1,265 @@
+basePath: /
+definitions:
+  addsong.Request:
+    description: Структура запроса с данными песни.
+    properties:
+      data:
+        $ref: '#/definitions/models.Data'
+    type: object
+  get_all_data.Response:
+    description: Структура ответа с данными песен.
+    properties:
+      songs:
+        description: |-
+          Songs массив данных песен
+          @json:songs
+        items:
+          $ref: '#/definitions/models.Data'
+        type: array
+    type: object
+  get_song.Response:
+    description: Структура ответа с текстом песни и информацией о пагинации.
+    properties:
+      currentPage:
+        type: integer
+      pageSize:
+        type: integer
+      text:
+        items:
+          type: string
+        type: array
+      totalPages:
+        type: integer
+    type: object
+  models.CustomTime:
+    properties:
+      time.Time:
+        type: string
+    type: object
+  models.Data:
+    properties:
+      group:
+        type: string
+      link:
+        type: string
+      releaseDate:
+        $ref: '#/definitions/models.CustomTime'
+      song:
+        type: string
+      text:
+        type: string
+    type: object
+  update_song.Request:
+    description: Структура запроса с данными песни.
+    type: object
+host: localhost:8002
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is a sample server for a music library.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Music Library API
+  version: "1.0"
+paths:
+  /add:
+    post:
+      consumes:
+      - application/json
+      description: Добавление новой песни в формате JSON и запросе к внешнему API.
+      operationId: add-song
+      parameters:
+      - description: Данные песни
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/addsong.Request'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/addsong.Request'
+        "400":
+          description: failed to decode req-body
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Добавление новой песни
+  /delete/{id}:
+    delete:
+      description: Удаление песни по ID.
+      operationId: delete-song
+      parameters:
+      - description: ID песни
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: invalid ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Удаление песни
+  /get_data/songs:
+    get:
+      description: Получение данных библиотеки с фильтрацией по всем полям и пагинацией
+        (метод GET).
+      operationId: get-all-data
+      parameters:
+      - description: Имя группы
+        in: query
+        name: group
+        type: string
+      - description: Имя песни
+        in: query
+        name: song
+        type: string
+      - description: Дата релиза
+        in: query
+        name: releaseDate
+        type: string
+      - description: Текст песни
+        in: query
+        name: text
+        type: string
+      - description: Ссылка на песню
+        in: query
+        name: link
+        type: string
+      - description: Номер страницы
+        in: query
+        name: page
+        type: integer
+      - description: Размер страницы
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/get_all_data.Response'
+        "500":
+          description: failed to get songs
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получение данных библиотеки
+  /get_data/text:
+    get:
+      description: Получение текста песни с пагинацией по куплетам (метод GET).
+      operationId: get-song
+      parameters:
+      - description: Имя группы
+        in: query
+        name: group
+        required: true
+        type: string
+      - description: Имя песни
+        in: query
+        name: song
+        required: true
+        type: string
+      - description: Номер страницы
+        in: query
+        name: page
+        type: integer
+      - description: Размер страницы
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/get_song.Response'
+        "400":
+          description: group and song parameters are required
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: failed to get song
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получение текста песни
+  /update/{id}:
+    patch:
+      consumes:
+      - application/json
+      description: Изменение данных песни по ID.
+      operationId: update-song
+      parameters:
+      - description: ID песни
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные песни
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/update_song.Request'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: failed to decode req-body
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Изменение данных песни
+swagger: "2.0"
