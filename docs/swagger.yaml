@@ -1,29 +1,34 @@
 basePath: /
 definitions:
   get_all_data.Response:
-    description: Структура ответа с данными песен.
-    properties:
-      songs:
-        description: |-
-          Songs массив данных песен
-          @json:songs
-        items:
-          $ref: '#/definitions/models.Data'
-        type: array
-    type: object
-  get_song.Response:
-    description: Структура ответа с текстом песни и информацией о пагинации.
+    description: Структура ответа с данными песен и информацией о пагинации.
     properties:
       currentPage:
         type: integer
-      pageSize:
+      maxPageSize:
         type: integer
-      text:
+      songs:
         items:
-          type: string
+          $ref: '#/definitions/models.Data'
         type: array
       totalPages:
         type: integer
+      totalSongs:
+        type: integer
+    type: object
+  get_song.Response:
+    description: Структура ответа с текстом песни и информацией о куплетах.
+    properties:
+      currentPage:
+        type: integer
+      maxVersesPerPage:
+        type: integer
+      totalPages:
+        type: integer
+      verses:
+        items:
+          type: string
+        type: array
     type: object
   models.CustomTime:
     properties:

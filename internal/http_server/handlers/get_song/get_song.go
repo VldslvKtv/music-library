@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math"
 	"music_library/internal/http_server/lib/utils"
 	"music_library/internal/http_server/storage"
 	"net/http"
@@ -18,20 +19,20 @@ import (
 type GetText interface {
 	// GetSong получает текст песни по имени группы и имени песни.
 	// @Description Получение текста песни по имени группы и имени песни.
-	// @Param group string имя группы
-	// @Param song string имя песни
-	// @return string текст песни
-	// @return error ошибка выполнения
+	// @Param group string "Имя группы"
+	// @Param song string "Имя песни"
+	// @return string "Текст песни"
+	// @return error "Ошибка выполнения"
 	GetSong(group string, song string) (string, error)
 }
 
-// Response представляет структуру ответа с текстом песни и информацией о пагинации.
-// @Description Структура ответа с текстом песни и информацией о пагинации.
+// Response представляет структуру ответа с текстом песни и информацией о куплетах.
+// @Description Структура ответа с текстом песни и информацией о куплетах.
 type Response struct {
-	Text        []string `json:"text"`
-	PageSize    int      `json:"pageSize"`
-	TotalPages  int      `json:"totalPages"`
-	CurrentPage int      `json:"currentPage"`
+	Verses           []string `json:"verses"`
+	MaxVersesPerPage int      `json:"maxVersesPerPage"`
+	TotalPages       int      `json:"totalPages"`
+	CurrentPage      int      `json:"currentPage"`
 }
 
 // New создает новый обработчик для получения текста песни с пагинацией по куплетам (метод GET).
@@ -84,7 +85,7 @@ func New(log *slog.Logger, getText GetText) http.HandlerFunc {
 		songData = strings.ReplaceAll(songData, "\\n\\n", "\n\n")
 		verses := strings.Split(songData, "\n\n")
 		totalVerses := len(verses)
-		totalPages := (totalVerses + pageSize - 1) / pageSize
+		totalPages := int(math.Ceil(float64(totalVerses) / float64(pageSize)))
 
 		if page > totalPages {
 			page = totalPages
@@ -99,10 +100,10 @@ func New(log *slog.Logger, getText GetText) http.HandlerFunc {
 		paginatedVerses := verses[start:end]
 
 		response := Response{
-			Text:        paginatedVerses,
-			PageSize:    pageSize,
-			TotalPages:  totalPages,
-			CurrentPage: page,
+			Verses:           paginatedVerses,
+			MaxVersesPerPage: pageSize,
+			TotalPages:       totalPages,
+			CurrentPage:      page,
 		}
 
 		log.Info("song get")

@@ -3,6 +3,8 @@ package get_all_data
 import (
 	"fmt"
 	"log/slog"
+	"math"
+	resp "music_library/internal/http_server/lib/response"
 	"music_library/internal/http_server/lib/utils"
 	"music_library/internal/http_server/models"
 	"net/http"
@@ -16,20 +18,28 @@ import (
 type GetDataLibrary interface {
 	// GetData получает данные библиотеки с фильтрацией и пагинацией.
 	// @Description Получение данных библиотеки с фильтрацией по всем полям и пагинацией (метод GET).
-	// @Param filter map[string]interface{} фильтры для поиска
-	// @Param page int номер страницы
-	// @Param pageSize int размер страницы
-	// @return []models.Data массив данных песен
-	// @return error ошибка выполнения
+	// @Param filter map[string]interface{} "Фильтры для поиска"
+	// @Param page int "Номер страницы"
+	// @Param pageSize int "Размер страницы"
+	// @return []models.Data "Массив данных песен"
+	// @return error "Ошибка выполнения"
 	GetData(filter map[string]interface{}, page int, pageSize int) ([]models.Data, error)
+	// GetCountSongs получает общее количество песен с применением фильтров.
+	// @Description Получение общего количества песен с применением фильтров.
+	// @Param filter map[string]interface{} "Фильтры для поиска"
+	// @return int "Общее количество песен"
+	// @return error "Ошибка выполнения"
+	GetCountSongs(filter map[string]interface{}) (int, error)
 }
 
-// Response представляет структуру ответа с данными песен.
-// @Description Структура ответа с данными песен.
+// Response представляет структуру ответа с данными песен и информацией о пагинации.
+// @Description Структура ответа с данными песен и информацией о пагинации.
 type Response struct {
-	// Songs массив данных песен
-	// @json:songs
-	Songs []models.Data `json:"songs"`
+	Songs       []models.Data `json:"songs"`
+	MaxPageSize int           `json:"maxPageSize"`
+	TotalPages  int           `json:"totalPages"`
+	CurrentPage int           `json:"currentPage"`
+	TotalSongs  int           `json:"totalSongs"`
 }
 
 // New создает новый обработчик для получения данных библиотеки.
@@ -54,6 +64,18 @@ func New(log *slog.Logger, getSongs GetDataLibrary) http.HandlerFunc {
 		log.Info(fmt.Sprintf("op=%s", op))
 
 		filter := getFilter(r, "group", "song", "releaseDate", "text", "link")
+
+		totalSongs, err := getSongs.GetCountSongs(filter)
+		if err != nil {
+			utils.RenderCommonErr(err, log, w, r, "failed to get songs", 500)
+			return
+		}
+
+		if totalSongs == 0 {
+			render.JSON(w, r, resp.Empty("no songs"))
+			return
+		}
+
 		page, err := strconv.Atoi(r.URL.Query().Get("page"))
 		if err != nil || page < 1 {
 			page = 1
@@ -63,12 +85,25 @@ func New(log *slog.Logger, getSongs GetDataLibrary) http.HandlerFunc {
 			pageSize = 10
 		}
 
+		totalPages := int(math.Ceil(float64(totalSongs) / float64(pageSize)))
+
+		if page > totalPages {
+			page = totalPages
+		}
+
 		songs, err := getSongs.GetData(filter, page, pageSize)
 		if err != nil {
 			utils.RenderCommonErr(err, log, w, r, "failed to get songs", 500)
 			return
 		}
-		response := Response{Songs: songs}
+
+		response := Response{
+			Songs:       songs,
+			MaxPageSize: pageSize,
+			TotalPages:  totalPages,
+			CurrentPage: page,
+			TotalSongs:  totalSongs,
+		}
 
 		log.Info("songs get")
 

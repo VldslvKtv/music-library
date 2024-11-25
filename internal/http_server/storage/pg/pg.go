@@ -3,7 +3,6 @@ package pg
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"music_library/config"
 	"music_library/internal/http_server/lib/utils"
 	"music_library/internal/http_server/models"
@@ -56,12 +55,7 @@ func (s *Storage) Close() {
 	defer s.DB.Close()
 }
 
-func (s *Storage) GetData(filter map[string]interface{}, page int, pageSize int) ([]models.Data, error) {
-	const op = "storage.pg.GetData"
-	slog.Info(fmt.Sprintf("map: %v", filter))
-
-	offset := (page - 1) * pageSize
-
+func getWhereClauses(filter map[string]interface{}) (string, []interface{}, int) {
 	var whereClauses []string
 	var args []interface{}
 	argID := 1
@@ -77,6 +71,37 @@ func (s *Storage) GetData(filter map[string]interface{}, page int, pageSize int)
 	if len(whereClauses) > 0 {
 		whereSQL = "WHERE " + strings.Join(whereClauses, " AND ")
 	}
+	return whereSQL, args, argID
+}
+
+func (s *Storage) GetCountSongs(filter map[string]interface{}) (int, error) {
+	const op = "storage.pg.GetCountSongs"
+	ctx := context.Background()
+
+	whereSQL, _, _ := getWhereClauses(filter)
+
+	countSongs := fmt.Sprintf(`
+	 SELECT COUNT(*) 
+	 FROM groups 
+	 JOIN songs ON groups.id = songs.group_id
+	 JOIN song_details ON songs.id = song_details.song_id
+     %s
+	`, whereSQL)
+
+	var totalSongs int
+	if err := s.DB.QueryRow(ctx, countSongs).Scan(&totalSongs); err != nil {
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+	return totalSongs, nil
+
+}
+
+func (s *Storage) GetData(filter map[string]interface{}, page int, pageSize int) ([]models.Data, error) {
+	const op = "storage.pg.GetData"
+	ctx := context.Background()
+	offset := (page - 1) * pageSize
+
+	whereSQL, args, argID := getWhereClauses(filter)
 
 	query := fmt.Sprintf(`
         SELECT groups.name, songs.name, release_date, text, link
@@ -90,7 +115,7 @@ func (s *Storage) GetData(filter map[string]interface{}, page int, pageSize int)
 
 	args = append(args, pageSize, offset)
 
-	rows, err := s.DB.Query(context.Background(), query, args...)
+	rows, err := s.DB.Query(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}

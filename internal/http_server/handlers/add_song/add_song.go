@@ -7,7 +7,6 @@ import (
 	"music_library/internal/http_server/lib/logger"
 	resp "music_library/internal/http_server/lib/response"
 	"music_library/internal/http_server/lib/utils"
-	"music_library/internal/http_server/mocks"
 	"music_library/internal/http_server/models"
 	"music_library/internal/http_server/storage"
 	"net/http"
@@ -63,14 +62,15 @@ func New(log *slog.Logger, apiURL string, addSong AddNewSong) http.HandlerFunc {
 		}
 
 		// Для тестирования сделал мок:
-		mocckClient := mocks.NewMockClient(`{ "releaseDate": 
-        "16.07.2006", 
-        "text": "Sample song lyrics\n\nMore lyrics...", 
-        "link": "https://example.com" }`,
-			http.StatusOK, nil)
-		details, err := mocckClient.Get(fmt.Sprintf("%s/info?group=%s&song=%s", apiURL, req.Group, req.Song))
 
-		// details, err := http.Get(fmt.Sprintf("%s/info?group=%s&song=%s", apiURL, req.Song.Group, req.Song.Song))
+		// mocckClient := mocks.NewMockClient(`{ "releaseDate":
+		// "16.07.2006",
+		// "text": "Sample song lyrics\n\nMore lyrics...",
+		// "link": "https://example.com" }`,
+		// 	http.StatusOK, nil)
+		// details, err := mocckClient.Get(fmt.Sprintf("%s/info?group=%s&song=%s", apiURL, req.Group, req.Song))
+
+		details, err := http.Get(fmt.Sprintf("%s/info?group=%s&song=%s", apiURL, req.Group, req.Song))
 		if err != nil {
 			log.Error("failed to get details", logger.Err(err))
 			w.WriteHeader(http.StatusInternalServerError)

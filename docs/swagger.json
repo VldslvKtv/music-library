@@ -314,36 +314,47 @@
     },
     "definitions": {
         "get_all_data.Response": {
-            "description": "Структура ответа с данными песен.",
-            "type": "object",
-            "properties": {
-                "songs": {
-                    "description": "Songs массив данных песен\n@json:songs",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.Data"
-                    }
-                }
-            }
-        },
-        "get_song.Response": {
-            "description": "Структура ответа с текстом песни и информацией о пагинации.",
+            "description": "Структура ответа с данными песен и информацией о пагинации.",
             "type": "object",
             "properties": {
                 "currentPage": {
                     "type": "integer"
                 },
-                "pageSize": {
+                "maxPageSize": {
                     "type": "integer"
                 },
-                "text": {
+                "songs": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/models.Data"
                     }
                 },
                 "totalPages": {
                     "type": "integer"
+                },
+                "totalSongs": {
+                    "type": "integer"
+                }
+            }
+        },
+        "get_song.Response": {
+            "description": "Структура ответа с текстом песни и информацией о куплетах.",
+            "type": "object",
+            "properties": {
+                "currentPage": {
+                    "type": "integer"
+                },
+                "maxVersesPerPage": {
+                    "type": "integer"
+                },
+                "totalPages": {
+                    "type": "integer"
+                },
+                "verses": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },

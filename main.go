@@ -88,7 +88,7 @@ func main() {
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT) // graceful shutdown
 	check := <-stop
 
-	log.Info("server stopped", slog.String("signal", check.String()))
+	log.Debug("server stopped", slog.String("signal", check.String()))
 }
 
 // Настройка уровня логирования

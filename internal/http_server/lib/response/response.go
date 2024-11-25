@@ -31,6 +31,12 @@ func Error(msg string) Response {
 	}
 }
 
+func Empty(msg string) Response {
+	return Response{
+		Status: msg,
+	}
+}
+
 func ValidationError(errs validator.ValidationErrors) Response {
 	var errMsgs []string
 
