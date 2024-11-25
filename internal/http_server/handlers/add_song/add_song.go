@@ -7,6 +7,7 @@ import (
 	"music_library/internal/http_server/lib/logger"
 	resp "music_library/internal/http_server/lib/response"
 	"music_library/internal/http_server/lib/utils"
+	"music_library/internal/http_server/mocks"
 	"music_library/internal/http_server/models"
 	"music_library/internal/http_server/storage"
 	"net/http"
@@ -20,15 +21,27 @@ import (
 type AddNewSong interface {
 	// CreateSong создает новую песню.
 	// @Description Создание новой песни.
-	// @Param song models.Data данные песни
+	// @Param song body models.Data true "Данные песни"
 	// @return error ошибка выполнения
 	CreateSong(song models.Data) error
 }
 
-// Request представляет структуру запроса с данными песни.
+// FullData представляет структуру запроса с данными песни.
 // @Description Структура запроса с данными песни.
-type Request struct {
+type FullData struct {
 	Data models.Data
+}
+
+// RequestSongAndGroup представляет структуру запроса с данными группы и песни.
+// @Description Структура запроса с данными группы и песни.
+type RequestSongAndGroup struct {
+	Song models.SongAndGroup
+}
+
+// RequestDetails представляет структуру запроса с данными о деталях песни.
+// @Description Структура запроса с данными о деталях песни.
+type RequestDetails struct {
+	SongDetails models.SongDetails
 }
 
 // New создает новый обработчик для добавления новой песни (метод POST).
@@ -37,8 +50,8 @@ type Request struct {
 // @ID add-song
 // @Accept json
 // @Produce json
-// @Param data body Request true "Данные песни"
-// @Success 200 {object} Request
+// @Param data body RequestSongAndGroup true "Данные песни"
+// @Success 200 {object} FullData
 // @Failure 400 {object} map[string]string "failed to decode req-body"
 // @Failure 500 {object} map[string]string "internal server error"
 // @Router /add [post]
@@ -48,11 +61,11 @@ func New(log *slog.Logger, apiURL string, addSong AddNewSong) http.HandlerFunc {
 
 		log.Info(fmt.Sprintf("op: %s", op))
 
-		var req Request
+		var req RequestSongAndGroup
 
-		err := render.DecodeJSON(r.Body, &req.Data.SongAndGroup) // распарсим запрос
+		err := render.DecodeJSON(r.Body, &req.Song) // распарсим запрос
 		if err != nil {
-			utils.RenderCommonErr(log, w, r, "failed to decode req-body", 400)
+			utils.RenderCommonErr(err, log, w, r, "failed to decode req-body", 400)
 			return // обязательно выйти тк render.JSON не прервет выполнение
 		}
 
@@ -67,14 +80,15 @@ func New(log *slog.Logger, apiURL string, addSong AddNewSong) http.HandlerFunc {
 		}
 
 		// Для тестирования сделал мок:
-		// mocckClient := mocks.NewMockClient(`{ "releaseDate":
-		//  "16.07.2006",
-		//  "text": "Sample song lyrics\n\nMore lyrics...",
-		//   "link": "https://example.com" }`,
-		//  http.StatusOK, nil)
-		// details, err := mocckClient.Get(fmt.Sprintf("%s/info?group=%s&song=%s", apiURL, req.Data.Group, req.Data.Song))
 
-		details, err := http.Get(fmt.Sprintf("%s/info?group=%s&song=%s", apiURL, req.Data.Group, req.Data.Song))
+		mocckClient := mocks.NewMockClient(`{ "releaseDate": 
+		"16.07.2006", 
+		"text": "Sample song lyrics\n\nMore lyrics...", 
+		"link": "https://example.com" }`,
+			http.StatusOK, nil)
+		details, err := mocckClient.Get(fmt.Sprintf("%s/info?group=%s&song=%s", apiURL, req.Song.Group, req.Song.Song))
+
+		// details, err := http.Get(fmt.Sprintf("%s/info?group=%s&song=%s", apiURL, req.Song.Group, req.Song.Song))
 		if err != nil {
 			log.Error("failed to get details", logger.Err(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -98,7 +112,9 @@ func New(log *slog.Logger, apiURL string, addSong AddNewSong) http.HandlerFunc {
 			}
 		}
 
-		err = render.DecodeJSON(details.Body, &req.Data.SongDetails) // распарсим запрос
+		var detailsData RequestDetails
+
+		err = render.DecodeJSON(details.Body, &detailsData.SongDetails) // распарсим запрос
 		if err != nil {
 			log.Error("failed to decode req-body (external api)", logger.Err(err))
 			w.WriteHeader(http.StatusBadRequest)
@@ -106,22 +122,31 @@ func New(log *slog.Logger, apiURL string, addSong AddNewSong) http.HandlerFunc {
 			return
 		}
 
-		log.Info("request body decoded 2", slog.Any("request", req))
+		log.Info("request body decoded 2", slog.Any("request", detailsData))
 
-		err = addSong.CreateSong(req.Data)
+		full := FullData{
+			Data: models.Data{
+				SongAndGroup: req.Song,
+				SongDetails:  detailsData.SongDetails,
+			},
+		}
+
+		log.Info("request body decoded 3", slog.Any("request", full))
+
+		err = addSong.CreateSong(full.Data)
 		if err != nil {
 			if errors.Is(err, storage.ErrGroupExists) {
-				utils.RenderCommonErr(log, w, r, "group already exists", 500)
+				utils.RenderCommonErr(err, log, w, r, "group already exists", 500)
 				return
 			} else if errors.Is(err, storage.ErrSongExists) {
-				utils.RenderCommonErr(log, w, r, "song already exists", 500)
+				utils.RenderCommonErr(err, log, w, r, "song already exists", 500)
 				return
 			}
-			utils.RenderCommonErr(log, w, r, "failed to add song", 500)
+			utils.RenderCommonErr(err, log, w, r, "failed to add song", 500)
 			return
 		}
 
 		log.Info("Song is add")
-		render.JSON(w, r, req)
+		render.JSON(w, r, full)
 	}
 }

@@ -52,14 +52,14 @@ func New(log *slog.Logger, updateSong UpdateSong) http.HandlerFunc {
 
 		id, err := utils.CheckID(chi.URLParam(r, "id"))
 		if err != nil {
-			utils.RenderCommonErr(log, w, r, "invalid ID", 400)
+			utils.RenderCommonErr(err, log, w, r, "invalid ID", 400)
 			return
 		}
 
 		var req Request
 		err = render.DecodeJSON(r.Body, &req.song) // распарсим запрос
 		if err != nil {
-			utils.RenderCommonErr(log, w, r, "failed to decode req-body", 400)
+			utils.RenderCommonErr(err, log, w, r, "failed to decode req-body", 400)
 			return // обязательно выйти тк render.JSON не прервет выполнение
 		}
 
@@ -68,10 +68,10 @@ func New(log *slog.Logger, updateSong UpdateSong) http.HandlerFunc {
 		err = updateSong.PatchSong(id, req.song)
 		if err != nil {
 			if errors.Is(err, storage.ErrGroupExists) {
-				utils.RenderCommonErr(log, w, r, "group already exists", 500)
+				utils.RenderCommonErr(err, log, w, r, "group already exists", 500)
 				return
 			} else if errors.Is(err, storage.ErrSongExists) {
-				utils.RenderCommonErr(log, w, r, "song already exists", 500)
+				utils.RenderCommonErr(err, log, w, r, "song already exists", 500)
 				return
 			}
 			log.Error("error update data", logger.Err(err))

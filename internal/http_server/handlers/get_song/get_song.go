@@ -56,7 +56,7 @@ func New(log *slog.Logger, getText GetText) http.HandlerFunc {
 		group := r.URL.Query().Get("group")
 		song := r.URL.Query().Get("song")
 		if group == "" || song == "" {
-			utils.RenderCommonErr(log, w, r, "group and song parameters are required", 400)
+			utils.RenderCommonErr(errors.New("group and song parameters are required"), log, w, r, "group and song parameters are required", 400)
 			return
 		}
 
@@ -73,10 +73,10 @@ func New(log *slog.Logger, getText GetText) http.HandlerFunc {
 		songData, err := getText.GetSong(group, song)
 		if err != nil {
 			if errors.Is(err, storage.ErrSongNotFound) {
-				utils.RenderCommonErr(log, w, r, "song not found", 500)
+				utils.RenderCommonErr(err, log, w, r, "song not found", 500)
 				return
 			}
-			utils.RenderCommonErr(log, w, r, "failed to get song", 500)
+			utils.RenderCommonErr(err, log, w, r, "failed to get song", 500)
 			return
 		}
 

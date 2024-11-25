@@ -42,14 +42,14 @@ func New(log *slog.Logger, deleteSong DeleteSong) http.HandlerFunc {
 
 		id, err := utils.CheckID(chi.URLParam(r, "id"))
 		if err != nil {
-			utils.RenderCommonErr(log, w, r, "invalid ID", 400)
+			utils.RenderCommonErr(err, log, w, r, "invalid ID", 400)
 			return
 		}
 
 		err = deleteSong.DeleteSong(id)
 		if err != nil {
 			if errors.Is(err, storage.ErrSongNotFound) {
-				utils.RenderCommonErr(log, w, r, "song not found", 500)
+				utils.RenderCommonErr(err, log, w, r, "song not found", 500)
 				return
 			}
 			log.Error("error deleting", logger.Err(err))

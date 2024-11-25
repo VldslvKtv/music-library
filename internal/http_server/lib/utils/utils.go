@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"log/slog"
+	"music_library/internal/http_server/lib/logger"
 	resp "music_library/internal/http_server/lib/response"
 	"music_library/internal/http_server/models"
 	"net/http"
@@ -86,9 +87,9 @@ func ChangeKeys(m *map[string]interface{}) map[string]interface{} {
 	return newMap
 }
 
-func RenderCommonErr(log *slog.Logger, w http.ResponseWriter, r *http.Request, text string, statusCode int) {
+func RenderCommonErr(err error, log *slog.Logger, w http.ResponseWriter, r *http.Request, text string, statusCode int) {
 
-	log.Error(text)
+	log.Error(text, logger.Err(err))
 	if statusCode == 400 {
 		w.WriteHeader(http.StatusBadRequest)
 	} else {

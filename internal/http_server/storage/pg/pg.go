@@ -153,6 +153,7 @@ func (s *Storage) CreateSong(data models.Data) error {
 	err = tx.QueryRow(ctx, `
         INSERT INTO groups (name)
         VALUES ($1)
+		RETURNING id
     `, data.Group).Scan(&groupID)
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == errCode {
@@ -166,6 +167,7 @@ func (s *Storage) CreateSong(data models.Data) error {
 	err = tx.QueryRow(ctx, `
         INSERT INTO songs (group_id, name)
         VALUES ($1, $2)
+		RETURNING id
     `, groupID, data.Song).Scan(&songID)
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == errCode {

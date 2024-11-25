@@ -42,7 +42,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/addsong.Request"
+                            "$ref": "#/definitions/addsong.RequestSongAndGroup"
                         }
                     }
                 ],
@@ -50,7 +50,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/addsong.Request"
+                            "$ref": "#/definitions/addsong.FullData"
                         }
                     },
                     "400": {
@@ -319,12 +319,21 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "addsong.Request": {
+        "addsong.FullData": {
             "description": "Структура запроса с данными песни.",
             "type": "object",
             "properties": {
                 "data": {
                     "$ref": "#/definitions/models.Data"
+                }
+            }
+        },
+        "addsong.RequestSongAndGroup": {
+            "description": "Структура запроса с данными группы и песни.",
+            "type": "object",
+            "properties": {
+                "song": {
+                    "$ref": "#/definitions/models.SongAndGroup"
                 }
             }
         },
@@ -386,6 +395,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "text": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.SongAndGroup": {
+            "type": "object",
+            "properties": {
+                "group": {
+                    "type": "string"
+                },
+                "song": {
                     "type": "string"
                 }
             }

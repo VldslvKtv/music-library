@@ -65,7 +65,7 @@ func New(log *slog.Logger, getSongs GetDataLibrary) http.HandlerFunc {
 
 		songs, err := getSongs.GetData(filter, page, pageSize)
 		if err != nil {
-			utils.RenderCommonErr(log, w, r, "failed to get songs", 500)
+			utils.RenderCommonErr(err, log, w, r, "failed to get songs", 500)
 			return
 		}
 		response := Response{Songs: songs}
