@@ -1,6 +1,7 @@
 package get_all_data
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"math"
@@ -18,18 +19,20 @@ import (
 type GetDataLibrary interface {
 	// GetData получает данные библиотеки с фильтрацией и пагинацией.
 	// @Description Получение данных библиотеки с фильтрацией по всем полям и пагинацией (метод GET).
+	// @Param ctx context.Context Контекст выполнения запроса
 	// @Param filter map[string]interface{} "Фильтры для поиска"
 	// @Param page int "Номер страницы"
 	// @Param pageSize int "Размер страницы"
 	// @return []models.Data "Массив данных песен"
 	// @return error "Ошибка выполнения"
-	GetData(filter map[string]interface{}, page int, pageSize int) ([]models.Data, error)
+	GetData(ctx context.Context, filter map[string]interface{}, page int, pageSize int) ([]models.Data, error)
 	// GetCountSongs получает общее количество песен с применением фильтров.
 	// @Description Получение общего количества песен с применением фильтров.
+	// @Param ctx context.Context Контекст выполнения запроса
 	// @Param filter map[string]interface{} "Фильтры для поиска"
 	// @return int "Общее количество песен"
 	// @return error "Ошибка выполнения"
-	GetCountSongs(filter map[string]interface{}) (int, error)
+	GetCountSongs(ctx context.Context, filter map[string]interface{}) (int, error)
 }
 
 // Response представляет структуру ответа с данными песен и информацией о пагинации.
@@ -60,12 +63,13 @@ type Response struct {
 func New(log *slog.Logger, getSongs GetDataLibrary) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "http_server.handlers.get_all_data.New"
+		ctx := r.Context()
 
 		log.Info(fmt.Sprintf("op=%s", op))
 
 		filter := getFilter(r, "group", "song", "releaseDate", "text", "link")
 
-		totalSongs, err := getSongs.GetCountSongs(filter)
+		totalSongs, err := getSongs.GetCountSongs(ctx, filter)
 		if err != nil {
 			utils.RenderCommonErr(err, log, w, r, "failed to get songs", 500)
 			return
@@ -91,7 +95,7 @@ func New(log *slog.Logger, getSongs GetDataLibrary) http.HandlerFunc {
 			page = totalPages
 		}
 
-		songs, err := getSongs.GetData(filter, page, pageSize)
+		songs, err := getSongs.GetData(ctx, filter, page, pageSize)
 		if err != nil {
 			utils.RenderCommonErr(err, log, w, r, "failed to get songs", 500)
 			return

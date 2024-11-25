@@ -24,104 +24,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/add": {
-            "post": {
-                "description": "Добавление новой песни в формате JSON и запросе к внешнему API.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "summary": "Добавление новой песни",
-                "operationId": "add-song",
-                "parameters": [
-                    {
-                        "description": "Данные песни",
-                        "name": "song",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.SongAndGroup"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Data"
-                        }
-                    },
-                    "400": {
-                        "description": "failed to decode req-body",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/delete/{id}": {
-            "delete": {
-                "description": "Удаление песни по ID.",
-                "produces": [
-                    "application/json"
-                ],
-                "summary": "Удаление песни",
-                "operationId": "delete-song",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "ID песни",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "ok",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "invalid ID",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/get_data/songs": {
             "get": {
                 "description": "Получение данных библиотеки с фильтрацией по всем полям и пагинацией (метод GET).",
@@ -237,7 +139,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "group and song parameters are required",
+                        "description": "group and song parameters are required or any other errors",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -257,7 +159,103 @@ const docTemplate = `{
                 }
             }
         },
-        "/update/{id}": {
+        "/songs/": {
+            "post": {
+                "description": "Добавление новой песни в формате JSON и запросе к внешнему API.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Добавление новой песни",
+                "operationId": "add-song",
+                "parameters": [
+                    {
+                        "description": "Данные песни",
+                        "name": "song",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.SongAndGroup"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Data"
+                        }
+                    },
+                    "400": {
+                        "description": "failed to decode req-body or any other errors",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/songs/{id}": {
+            "delete": {
+                "description": "Удаление песни по ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Удаление песни",
+                "operationId": "delete-song",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID песни",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "invalid ID or any other errors",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
             "patch": {
                 "description": "Изменение данных песни по ID.",
                 "consumes": [
@@ -297,7 +295,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "failed to decode req-body",
+                        "description": "failed to decode req-body or any other errors",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -374,10 +372,6 @@ const docTemplate = `{
         },
         "models.Data": {
             "type": "object",
-            "required": [
-                "group",
-                "song"
-            ],
             "properties": {
                 "group": {
                     "type": "string"
@@ -398,10 +392,6 @@ const docTemplate = `{
         },
         "models.SongAndGroup": {
             "type": "object",
-            "required": [
-                "group",
-                "song"
-            ],
             "properties": {
                 "group": {
                     "type": "string"

@@ -54,7 +54,7 @@ func main() {
 	defer storage.Close()
 
 	router := chi.NewRouter()
-	router.Use(middleware.Recoverer) // воостановление полсе паники (чтобы не падало приложение после 1 ошибки в хендлере)
+	router.Use(middleware.Recoverer) // воостановление после паники (чтобы не падало приложение после 1 ошибки в хендлере)
 	router.Use(middleware.URLFormat)
 
 	// Swagger UI
@@ -64,9 +64,11 @@ func main() {
 		r.Get("/songs", get_all_data.New(log, storage))
 		r.Get("/text", get_song.New(log, storage))
 	})
-	router.Post("/add", add_song.New(log, config.ExtAPIUrl, storage))
-	router.Delete("/delete/{id}", delete_song.New(log, storage))
-	router.Patch("/update/{id}", update_song.New(log, storage))
+	router.Route("/songs", func(r chi.Router) {
+		r.Post("/", add_song.New(log, config.ExtAPIUrl, storage))
+		r.Delete("/{id}", delete_song.New(log, storage))
+		r.Patch("/{id}", update_song.New(log, storage))
+	})
 
 	log.Info("starting server", slog.String("address", config.Address))
 

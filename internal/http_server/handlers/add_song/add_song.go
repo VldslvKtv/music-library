@@ -1,6 +1,7 @@
 package add_song
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -20,9 +21,10 @@ import (
 type AddNewSong interface {
 	// CreateSong создает новую песню.
 	// @Description Создание новой песни.
+	// @Param ctx context.Context Контекст выполнения запроса
 	// @Param song body models.Data true "Данные песни"
 	// @return error ошибка выполнения
-	CreateSong(song models.Data) error
+	CreateSong(ctx context.Context, song models.Data) error
 }
 
 // New создает новый обработчик для добавления новой песни (метод POST).
@@ -33,12 +35,13 @@ type AddNewSong interface {
 // @Produce json
 // @Param song body models.SongAndGroup true "Данные песни"
 // @Success 200 {object} models.Data
-// @Failure 400 {object} map[string]string "failed to decode req-body"
+// @Failure 400 {object} map[string]string "failed to decode req-body or any other errors"
 // @Failure 500 {object} map[string]string "internal server error"
-// @Router /add [post]
+// @Router /songs/ [post]
 func New(log *slog.Logger, apiURL string, addSong AddNewSong) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "http_server.handlers.add_song.New"
+		ctx := r.Context()
 
 		log.Info(fmt.Sprintf("op: %s", op))
 
@@ -115,13 +118,13 @@ func New(log *slog.Logger, apiURL string, addSong AddNewSong) http.HandlerFunc {
 
 		log.Debug("full data", slog.Any("data", fullData))
 
-		err = addSong.CreateSong(fullData)
+		err = addSong.CreateSong(ctx, fullData)
 		if err != nil {
 			if errors.Is(err, storage.ErrGroupExists) {
-				utils.RenderCommonErr(err, log, w, r, "group already exists", 500)
+				utils.RenderCommonErr(err, log, w, r, "group already exists", 400)
 				return
 			} else if errors.Is(err, storage.ErrSongExists) {
-				utils.RenderCommonErr(err, log, w, r, "song already exists", 500)
+				utils.RenderCommonErr(err, log, w, r, "song already exists", 400)
 				return
 			}
 			utils.RenderCommonErr(err, log, w, r, "failed to add song", 500)

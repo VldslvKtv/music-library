@@ -1,6 +1,7 @@
 package get_song
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -19,11 +20,12 @@ import (
 type GetText interface {
 	// GetSong получает текст песни по имени группы и имени песни.
 	// @Description Получение текста песни по имени группы и имени песни.
+	// @Param ctx context.Context Контекст выполнения запроса
 	// @Param group string "Имя группы"
 	// @Param song string "Имя песни"
 	// @return string "Текст песни"
 	// @return error "Ошибка выполнения"
-	GetSong(group string, song string) (string, error)
+	GetSong(ctx context.Context, group string, song string) (string, error)
 }
 
 // Response представляет структуру ответа с текстом песни и информацией о куплетах.
@@ -45,12 +47,13 @@ type Response struct {
 // @Param page query int false "Номер страницы"
 // @Param pageSize query int false "Размер страницы"
 // @Success 200 {object} Response
-// @Failure 400 {object} map[string]string "group and song parameters are required"
+// @Failure 400 {object} map[string]string "group and song parameters are required or any other errors"
 // @Failure 500 {object} map[string]string "failed to get song"
 // @Router /get_data/text [get]
 func New(log *slog.Logger, getText GetText) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "http_server.handlers.get_song.New"
+		ctx := r.Context()
 
 		log.Info(fmt.Sprintf("op: %s", op))
 
@@ -72,7 +75,7 @@ func New(log *slog.Logger, getText GetText) http.HandlerFunc {
 			page = 1
 		}
 
-		songData, err := getText.GetSong(group, song)
+		songData, err := getText.GetSong(ctx, group, song)
 		if err != nil {
 			if errors.Is(err, storage.ErrSongNotFound) {
 				utils.RenderCommonErr(err, log, w, r, "song not found", 500)

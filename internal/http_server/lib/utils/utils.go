@@ -94,7 +94,7 @@ func ChangeKeys(m *map[string]interface{}) map[string]interface{} {
 func RenderCommonErr(err error, log *slog.Logger, w http.ResponseWriter, r *http.Request, text string, statusCode int) {
 
 	log.Error(text, logger.Err(err))
-	if statusCode == 400 {
+	if statusCode == http.StatusBadRequest {
 		w.WriteHeader(http.StatusBadRequest)
 	} else {
 		w.WriteHeader(http.StatusInternalServerError)

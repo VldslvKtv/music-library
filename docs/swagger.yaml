@@ -47,9 +47,6 @@ definitions:
         type: string
       text:
         type: string
-    required:
-    - group
-    - song
     type: object
   models.SongAndGroup:
     properties:
@@ -57,9 +54,6 @@ definitions:
         type: string
       song:
         type: string
-    required:
-    - group
-    - song
     type: object
 host: localhost:8002
 info:
@@ -75,71 +69,6 @@ info:
   title: Music Library API
   version: "1.0"
 paths:
-  /add:
-    post:
-      consumes:
-      - application/json
-      description: Добавление новой песни в формате JSON и запросе к внешнему API.
-      operationId: add-song
-      parameters:
-      - description: Данные песни
-        in: body
-        name: song
-        required: true
-        schema:
-          $ref: '#/definitions/models.SongAndGroup'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Data'
-        "400":
-          description: failed to decode req-body
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: internal server error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Добавление новой песни
-  /delete/{id}:
-    delete:
-      description: Удаление песни по ID.
-      operationId: delete-song
-      parameters:
-      - description: ID песни
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: ok
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: invalid ID
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: internal server error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Удаление песни
   /get_data/songs:
     get:
       description: Получение данных библиотеки с фильтрацией по всем полям и пагинацией
@@ -219,7 +148,7 @@ paths:
           schema:
             $ref: '#/definitions/get_song.Response'
         "400":
-          description: group and song parameters are required
+          description: group and song parameters are required or any other errors
           schema:
             additionalProperties:
               type: string
@@ -231,7 +160,71 @@ paths:
               type: string
             type: object
       summary: Получение текста песни
-  /update/{id}:
+  /songs/:
+    post:
+      consumes:
+      - application/json
+      description: Добавление новой песни в формате JSON и запросе к внешнему API.
+      operationId: add-song
+      parameters:
+      - description: Данные песни
+        in: body
+        name: song
+        required: true
+        schema:
+          $ref: '#/definitions/models.SongAndGroup'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Data'
+        "400":
+          description: failed to decode req-body or any other errors
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Добавление новой песни
+  /songs/{id}:
+    delete:
+      description: Удаление песни по ID.
+      operationId: delete-song
+      parameters:
+      - description: ID песни
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: invalid ID or any other errors
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Удаление песни
     patch:
       consumes:
       - application/json
@@ -259,7 +252,7 @@ paths:
               type: string
             type: object
         "400":
-          description: failed to decode req-body
+          description: failed to decode req-body or any other errors
           schema:
             additionalProperties:
               type: string

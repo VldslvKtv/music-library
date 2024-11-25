@@ -1,6 +1,7 @@
 package delete_song
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -19,9 +20,10 @@ import (
 type DeleteSong interface {
 	// DeleteSong удаляет песню по ID.
 	// @Description Удаление песни по ID.
+	// @Param ctx context.Context Контекст выполнения запроса
 	// @Param idSong int ID песни
 	// @return error ошибка выполнения
-	DeleteSong(idSong int) error
+	DeleteSong(ctx context.Context, idSong int) error
 }
 
 // New создает новый обработчик для удаления песни (метод DELETE).
@@ -31,12 +33,13 @@ type DeleteSong interface {
 // @Produce json
 // @Param id path int true "ID песни"
 // @Success 200 {object} map[string]string "ok"
-// @Failure 400 {object} map[string]string "invalid ID"
+// @Failure 400 {object} map[string]string "invalid ID or any other errors"
 // @Failure 500 {object} map[string]string "internal server error"
-// @Router /delete/{id} [delete]
+// @Router /songs/{id} [delete]
 func New(log *slog.Logger, deleteSong DeleteSong) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "http_server.handlers.delete_song.New"
+		ctx := r.Context()
 
 		log.Info(fmt.Sprintf("op: %s", op))
 
@@ -46,7 +49,7 @@ func New(log *slog.Logger, deleteSong DeleteSong) http.HandlerFunc {
 			return
 		}
 
-		err = deleteSong.DeleteSong(id)
+		err = deleteSong.DeleteSong(ctx, id)
 		if err != nil {
 			if errors.Is(err, storage.ErrSongNotFound) {
 				utils.RenderCommonErr(err, log, w, r, "song not found", 500)

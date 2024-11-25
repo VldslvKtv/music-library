@@ -2,6 +2,7 @@ package pg
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"music_library/config"
 	"music_library/internal/http_server/lib/utils"
@@ -74,9 +75,8 @@ func getWhereClauses(filter map[string]interface{}) (string, []interface{}, int)
 	return whereSQL, args, argID
 }
 
-func (s *Storage) GetCountSongs(filter map[string]interface{}) (int, error) {
+func (s *Storage) GetCountSongs(ctx context.Context, filter map[string]interface{}) (int, error) {
 	const op = "storage.pg.GetCountSongs"
-	ctx := context.Background()
 
 	whereSQL, _, _ := getWhereClauses(filter)
 
@@ -96,9 +96,8 @@ func (s *Storage) GetCountSongs(filter map[string]interface{}) (int, error) {
 
 }
 
-func (s *Storage) GetData(filter map[string]interface{}, page int, pageSize int) ([]models.Data, error) {
+func (s *Storage) GetData(ctx context.Context, filter map[string]interface{}, page int, pageSize int) ([]models.Data, error) {
 	const op = "storage.pg.GetData"
-	ctx := context.Background()
 	offset := (page - 1) * pageSize
 
 	whereSQL, args, argID := getWhereClauses(filter)
@@ -138,7 +137,7 @@ func (s *Storage) GetData(filter map[string]interface{}, page int, pageSize int)
 	return songs, nil
 }
 
-func (s *Storage) GetSong(group string, song string) (string, error) {
+func (s *Storage) GetSong(ctx context.Context, group string, song string) (string, error) {
 	const op = "storage.pg.GetSong"
 
 	query := `
@@ -149,12 +148,12 @@ func (s *Storage) GetSong(group string, song string) (string, error) {
         WHERE groups.name = $1 AND songs.name = $2
     `
 
-	row := s.DB.QueryRow(context.Background(), query, group, song)
+	row := s.DB.QueryRow(ctx, query, group, song)
 
 	var textSong string
 	err := row.Scan(&textSong)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return "", fmt.Errorf("%s; %w", op, storage.ErrSongNotFound)
 		}
 		return "", fmt.Errorf("%s: %w", op, err)
@@ -163,10 +162,9 @@ func (s *Storage) GetSong(group string, song string) (string, error) {
 	return textSong, nil
 }
 
-func (s *Storage) CreateSong(data models.Data) error {
+func (s *Storage) CreateSong(ctx context.Context, data models.Data) error {
 	const op = "storage.pg.CreateSong"
 
-	ctx := context.Background()
 	tx, err := s.DB.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("%s; failed to begin transaction: %w", op, err)
@@ -214,23 +212,16 @@ func (s *Storage) CreateSong(data models.Data) error {
 	return nil
 }
 
-func (s *Storage) DeleteSong(idSong int) error {
+func (s *Storage) DeleteSong(ctx context.Context, idSong int) error {
 	const op = "storage.pg.DeleteSong"
-	ctx := context.Background()
-
-	tx, err := s.DB.Begin(ctx)
-	if err != nil {
-		return fmt.Errorf("%s: failed to begin transaction: %w", op, err)
-	}
-	defer tx.Rollback(ctx)
 
 	query := `
         DELETE FROM songs
         WHERE id = $1
     `
-	result, err := tx.Exec(ctx, query, idSong)
+	result, err := s.DB.Exec(ctx, query, idSong)
 	if err != nil {
-		return fmt.Errorf("%s: failed to delete from song_details: %w", op, err)
+		return fmt.Errorf("%s: failed to delete from songs: %w", op, err)
 	}
 
 	rowsAffected := result.RowsAffected()
@@ -238,16 +229,11 @@ func (s *Storage) DeleteSong(idSong int) error {
 		return fmt.Errorf("%s: %w", op, storage.ErrSongNotFound)
 	}
 
-	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("%s: failed to commit transaction: %w", op, err)
-	}
-
 	return nil
 }
 
-func (s *Storage) PatchSong(idSong int, data models.Data) error {
+func (s *Storage) PatchSong(ctx context.Context, idSong int, data models.Data) error {
 	const op = "storage.pg.PatchSong"
-	ctx := context.Background()
 
 	tx, err := s.DB.Begin(ctx)
 	if err != nil {

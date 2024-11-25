@@ -1,6 +1,8 @@
 package update_song
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -11,8 +13,6 @@ import (
 	"music_library/internal/http_server/storage"
 	"net/http"
 
-	"github.com/go-playground/validator"
-
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
 )
@@ -22,10 +22,11 @@ import (
 type UpdateSong interface {
 	// PatchSong изменяет данные песни по ID.
 	// @Description Изменение данных песни по ID.
+	// @Param ctx context.Context Контекст выполнения запроса
 	// @Param idSong int ID песни
 	// @Param data models.Data данные песни
 	// @return error ошибка выполнения
-	PatchSong(idSong int, data models.Data) error
+	PatchSong(ctx context.Context, idSong int, data models.Data) error
 }
 
 // New создает новый обработчик для изменения данных песни (метод PATCH).
@@ -37,12 +38,13 @@ type UpdateSong interface {
 // @Param id path int true "ID песни"
 // @Param data body models.Data true "Данные песни"
 // @Success 200 {object} map[string]string "ok"
-// @Failure 400 {object} map[string]string "failed to decode req-body"
+// @Failure 400 {object} map[string]string "failed to decode req-body or any other errors"
 // @Failure 500 {object} map[string]string "internal server error"
-// @Router /update/{id} [patch]
+// @Router /songs/{id} [patch]
 func New(log *slog.Logger, updateSong UpdateSong) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "http_server.handlers.update_song.New"
+		ctx := r.Context()
 
 		log.Info(fmt.Sprintf("op: %s", op))
 
@@ -52,25 +54,39 @@ func New(log *slog.Logger, updateSong UpdateSong) http.HandlerFunc {
 			return
 		}
 
-		var req models.Data
+		var bodyMap map[string]interface{}
+		err = json.NewDecoder(r.Body).Decode(&bodyMap)
+		if err != nil {
+			utils.RenderCommonErr(err, log, w, r, "failed to decode req-body", 400)
+			return
+		}
+		log.Debug("request body-map", slog.Any("req", bodyMap))
 
-		err = render.DecodeJSON(r.Body, &req)
+		if song, exists := bodyMap["song"]; exists && song == "" {
+			utils.RenderCommonErr(errors.New("song cannot be empty"), log, w, r, "song cannot be empty", 400)
+			return
+		}
+		if group, exists := bodyMap["group"]; exists && group == "" {
+			utils.RenderCommonErr(errors.New("group cannot be empty"), log, w, r, "group cannot be empty", 400)
+			return
+		}
+
+		bodyBytes, err := json.Marshal(bodyMap)
+		if err != nil {
+			utils.RenderCommonErr(err, log, w, r, "failed to marshal req-body", 500)
+			return
+		}
+
+		var req models.Data
+		err = json.Unmarshal(bodyBytes, &req)
 		if err != nil {
 			utils.RenderCommonErr(err, log, w, r, "failed to decode req-body", 400)
 			return
 		}
 
-		if err := validator.New().Struct(req); err != nil {
-			validatorErr := err.(validator.ValidationErrors)
-			log.Error("invalid request", logger.Err(err))
-			w.WriteHeader(http.StatusBadRequest)
-			render.JSON(w, r, resp.ValidationError(validatorErr)) // делаем ответ более читаемым
-			return
-		}
-
 		log.Debug("request body decoded", slog.Any("request", req))
 
-		err = updateSong.PatchSong(id, req)
+		err = updateSong.PatchSong(ctx, id, req)
 		if err != nil {
 			if errors.Is(err, storage.ErrGroupExists) {
 				utils.RenderCommonErr(err, log, w, r, "group already exists", 500)
@@ -85,7 +101,7 @@ func New(log *slog.Logger, updateSong UpdateSong) http.HandlerFunc {
 			return
 		}
 
-		log.Info("Song is update")
+		log.Info("Song is updated")
 		render.JSON(w, r, resp.OK())
 	}
 }
