@@ -36,7 +36,7 @@
 
 1. Склонируйте репозиторий:
 
-   git clone https://github.com/yourusername/music-library.git
+   git clone https://github.com/VldslvKtv/music-library.git
 
 2. Перейдите в директорию проекта:
 
