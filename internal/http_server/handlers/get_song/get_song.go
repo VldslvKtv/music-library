@@ -56,7 +56,8 @@ func New(log *slog.Logger, getText GetText) http.HandlerFunc {
 		group := r.URL.Query().Get("group")
 		song := r.URL.Query().Get("song")
 		if group == "" || song == "" {
-			utils.RenderCommonErr(errors.New("group and song parameters are required"), log, w, r, "group and song parameters are required", 400)
+			utils.RenderCommonErr(errors.New("group and song parameters are required"),
+				log, w, r, "group and song parameters are required", 400)
 			return
 		}
 

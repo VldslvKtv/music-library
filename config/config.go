@@ -53,6 +53,7 @@ func MustLoad() Config {
 	return config
 }
 
+// Проверка, что поля не пустые
 func checkAndReturnData(s string) string {
 	data := os.Getenv(s)
 	if data == "" {
@@ -61,6 +62,7 @@ func checkAndReturnData(s string) string {
 	return data
 }
 
+// Преобразование строки во временной интервал
 func parseDuration(s string) time.Duration {
 	d, err := time.ParseDuration(s)
 	if err != nil {

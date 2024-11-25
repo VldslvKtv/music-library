@@ -38,11 +38,11 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "description": "Данные песни",
-                        "name": "data",
+                        "name": "song",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/addsong.RequestSongAndGroup"
+                            "$ref": "#/definitions/models.SongAndGroup"
                         }
                     }
                 ],
@@ -50,7 +50,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/addsong.FullData"
+                            "$ref": "#/definitions/models.Data"
                         }
                     },
                     "400": {
@@ -282,7 +282,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/update_song.Request"
+                            "$ref": "#/definitions/models.Data"
                         }
                     }
                 ],
@@ -319,24 +319,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "addsong.FullData": {
-            "description": "Структура запроса с данными песни.",
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/models.Data"
-                }
-            }
-        },
-        "addsong.RequestSongAndGroup": {
-            "description": "Структура запроса с данными группы и песни.",
-            "type": "object",
-            "properties": {
-                "song": {
-                    "$ref": "#/definitions/models.SongAndGroup"
-                }
-            }
-        },
         "get_all_data.Response": {
             "description": "Структура ответа с данными песен.",
             "type": "object",
@@ -381,6 +363,10 @@ const docTemplate = `{
         },
         "models.Data": {
             "type": "object",
+            "required": [
+                "group",
+                "song"
+            ],
             "properties": {
                 "group": {
                     "type": "string"
@@ -401,6 +387,10 @@ const docTemplate = `{
         },
         "models.SongAndGroup": {
             "type": "object",
+            "required": [
+                "group",
+                "song"
+            ],
             "properties": {
                 "group": {
                     "type": "string"
@@ -409,10 +399,6 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
-        },
-        "update_song.Request": {
-            "description": "Структура запроса с данными песни.",
-            "type": "object"
         }
     }
 }`

@@ -51,7 +51,7 @@ func New(log *slog.Logger, getSongs GetDataLibrary) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "http_server.handlers.get_all_data.New"
 
-		log.Debug(fmt.Sprintf("op=%s", op))
+		log.Info(fmt.Sprintf("op=%s", op))
 
 		filter := getFilter(r, "group", "song", "releaseDate", "text", "link")
 		page, err := strconv.Atoi(r.URL.Query().Get("page"))
@@ -76,6 +76,7 @@ func New(log *slog.Logger, getSongs GetDataLibrary) http.HandlerFunc {
 	}
 }
 
+// Преобразование параметров запроса в map
 func getFilter(r *http.Request, params ...string) map[string]interface{} {
 	filter := make(map[string]interface{}, 5)
 	for _, elem := range params {

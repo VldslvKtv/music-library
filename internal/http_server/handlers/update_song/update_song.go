@@ -11,6 +11,8 @@ import (
 	"music_library/internal/http_server/storage"
 	"net/http"
 
+	"github.com/go-playground/validator"
+
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
 )
@@ -26,12 +28,6 @@ type UpdateSong interface {
 	PatchSong(idSong int, data models.Data) error
 }
 
-// Request представляет структуру запроса с данными песни.
-// @Description Структура запроса с данными песни.
-type Request struct {
-	song models.Data
-}
-
 // New создает новый обработчик для изменения данных песни (метод PATCH).
 // @Summary Изменение данных песни
 // @Description Изменение данных песни по ID.
@@ -39,7 +35,7 @@ type Request struct {
 // @Accept json
 // @Produce json
 // @Param id path int true "ID песни"
-// @Param data body Request true "Данные песни"
+// @Param data body models.Data true "Данные песни"
 // @Success 200 {object} map[string]string "ok"
 // @Failure 400 {object} map[string]string "failed to decode req-body"
 // @Failure 500 {object} map[string]string "internal server error"
@@ -56,16 +52,25 @@ func New(log *slog.Logger, updateSong UpdateSong) http.HandlerFunc {
 			return
 		}
 
-		var req Request
-		err = render.DecodeJSON(r.Body, &req.song) // распарсим запрос
+		var req models.Data
+
+		err = render.DecodeJSON(r.Body, &req)
 		if err != nil {
 			utils.RenderCommonErr(err, log, w, r, "failed to decode req-body", 400)
-			return // обязательно выйти тк render.JSON не прервет выполнение
+			return
 		}
 
-		log.Info("request body decoded", slog.Any("request", req.song))
+		if err := validator.New().Struct(req); err != nil {
+			validatorErr := err.(validator.ValidationErrors)
+			log.Error("invalid request", logger.Err(err))
+			w.WriteHeader(http.StatusBadRequest)
+			render.JSON(w, r, resp.ValidationError(validatorErr)) // делаем ответ более читаемым
+			return
+		}
 
-		err = updateSong.PatchSong(id, req.song)
+		log.Debug("request body decoded", slog.Any("request", req))
+
+		err = updateSong.PatchSong(id, req)
 		if err != nil {
 			if errors.Is(err, storage.ErrGroupExists) {
 				utils.RenderCommonErr(err, log, w, r, "group already exists", 500)

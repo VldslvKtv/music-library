@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/postgres" // Импорт драйвера PostgreSQL
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -148,7 +148,6 @@ func (s *Storage) CreateSong(data models.Data) error {
 	}
 	defer tx.Rollback(ctx)
 
-	// Вставка в таблицу groups
 	var groupID int
 	err = tx.QueryRow(ctx, `
         INSERT INTO groups (name)
@@ -162,7 +161,6 @@ func (s *Storage) CreateSong(data models.Data) error {
 		return fmt.Errorf("%s; failed to insert into groups: %w", op, err)
 	}
 
-	// Вставка в таблицу songs
 	var songID int
 	err = tx.QueryRow(ctx, `
         INSERT INTO songs (group_id, name)
@@ -176,7 +174,6 @@ func (s *Storage) CreateSong(data models.Data) error {
 		return fmt.Errorf("%s; failed to insert into songs: %w", op, err)
 	}
 
-	// Вставка в таблицу song_details
 	_, err = tx.Exec(ctx, `
         INSERT INTO song_details (song_id, release_date, text, link)
         VALUES ($1, $2, $3, $4)
@@ -185,7 +182,6 @@ func (s *Storage) CreateSong(data models.Data) error {
 		return fmt.Errorf("%s; failed to insert into song_details: %w", op, err)
 	}
 
-	// Подтверждение транзакции
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("%s; failed to commit transaction: %w", op, err)
 	}
@@ -240,7 +236,6 @@ func (s *Storage) PatchSong(idSong int, data models.Data) error {
 		return fmt.Errorf("%s: no changes", op)
 	}
 
-	// Обновление таблицы groups
 	if group, ok := mapData["groups.name"]; ok {
 		query := `
             UPDATE groups
@@ -257,7 +252,6 @@ func (s *Storage) PatchSong(idSong int, data models.Data) error {
 		delete(mapData, "groups.name")
 	}
 
-	// Обновление таблицы songs
 	if song, ok := mapData["songs.name"]; ok {
 		query := `
             UPDATE songs
@@ -274,7 +268,6 @@ func (s *Storage) PatchSong(idSong int, data models.Data) error {
 		delete(mapData, "songs.name")
 	}
 
-	// Обновление таблицы song_details
 	var setClauses []string
 	var args []interface{}
 	argID := 1
@@ -301,7 +294,6 @@ func (s *Storage) PatchSong(idSong int, data models.Data) error {
 		}
 	}
 
-	// Подтверждение транзакции
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("%s: failed to commit transaction: %w", op, err)
 	}

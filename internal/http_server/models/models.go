@@ -10,8 +10,8 @@ type Data struct {
 }
 
 type SongAndGroup struct {
-	Group string `json:"group"`
-	Song  string `json:"song"`
+	Group string `json:"group" validate:"required"`
+	Song  string `json:"song" validate:"required"`
 }
 
 type SongDetails struct {
@@ -20,12 +20,15 @@ type SongDetails struct {
 	Link        string     `json:"link"`
 }
 
+// CustomTimeFormat определяет формат даты, используемый для маршалинга и демаршалинга JSON.
+const CustomTimeFormat = "02.01.2006"
+
+// CustomTime расширяет структуру time.Time, предоставляя методы для работы с JSON.
 type CustomTime struct {
 	time.Time
 }
 
-const CustomTimeFormat = "02.01.2006"
-
+// Реализует интерфейс json.Unmarshaler для CustomTime.
 func (ct *CustomTime) UnmarshalJSON(b []byte) error {
 	s := string(b)
 	s = s[1 : len(s)-1]
@@ -38,10 +41,12 @@ func (ct *CustomTime) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// Реализует интерфейс json.Marshaler для CustomTime.
 func (ct CustomTime) MarshalJSON() ([]byte, error) {
 	return []byte(`"` + ct.Time.Format(CustomTimeFormat) + `"`), nil
 }
 
+// Возвращает строковое представление CustomTime в заданном формате даты.
 func (ct CustomTime) String() string {
 	return ct.Time.Format(CustomTimeFormat)
 }

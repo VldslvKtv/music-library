@@ -1,17 +1,5 @@
 basePath: /
 definitions:
-  addsong.FullData:
-    description: Структура запроса с данными песни.
-    properties:
-      data:
-        $ref: '#/definitions/models.Data'
-    type: object
-  addsong.RequestSongAndGroup:
-    description: Структура запроса с данными группы и песни.
-    properties:
-      song:
-        $ref: '#/definitions/models.SongAndGroup'
-    type: object
   get_all_data.Response:
     description: Структура ответа с данными песен.
     properties:
@@ -54,6 +42,9 @@ definitions:
         type: string
       text:
         type: string
+    required:
+    - group
+    - song
     type: object
   models.SongAndGroup:
     properties:
@@ -61,9 +52,9 @@ definitions:
         type: string
       song:
         type: string
-    type: object
-  update_song.Request:
-    description: Структура запроса с данными песни.
+    required:
+    - group
+    - song
     type: object
 host: localhost:8002
 info:
@@ -88,17 +79,17 @@ paths:
       parameters:
       - description: Данные песни
         in: body
-        name: data
+        name: song
         required: true
         schema:
-          $ref: '#/definitions/addsong.RequestSongAndGroup'
+          $ref: '#/definitions/models.SongAndGroup'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/addsong.FullData'
+            $ref: '#/definitions/models.Data'
         "400":
           description: failed to decode req-body
           schema:
@@ -252,7 +243,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/update_song.Request'
+          $ref: '#/definitions/models.Data'
       produces:
       - application/json
       responses:

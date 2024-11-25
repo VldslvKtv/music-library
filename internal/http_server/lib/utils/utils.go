@@ -14,6 +14,7 @@ import (
 	"github.com/go-chi/render"
 )
 
+// Проверка валидности ID
 func CheckID(param string) (int, error) {
 	var value int
 	value, err := strconv.Atoi(param)
@@ -23,6 +24,7 @@ func CheckID(param string) (int, error) {
 	return value, nil
 }
 
+// Преобразование структуры в map
 func ConvertStruct(s models.Data) map[string]interface{} {
 	newMap := make(map[string]interface{})
 	v := reflect.ValueOf(s)
@@ -70,6 +72,7 @@ func isZero(v reflect.Value) bool {
 	}
 }
 
+// Преобазование ключей map в удобный для работы с БД вид
 func ChangeKeys(m *map[string]interface{}) map[string]interface{} {
 	newMap := make(map[string]interface{})
 	for key, value := range *m {
@@ -87,6 +90,7 @@ func ChangeKeys(m *map[string]interface{}) map[string]interface{} {
 	return newMap
 }
 
+// Процедура для вывода лога и ошибок
 func RenderCommonErr(err error, log *slog.Logger, w http.ResponseWriter, r *http.Request, text string, statusCode int) {
 
 	log.Error(text, logger.Err(err))
