@@ -88,17 +88,23 @@ func New(log *slog.Logger, updateSong UpdateSong) http.HandlerFunc {
 
 		err = updateSong.PatchSong(ctx, id, req)
 		if err != nil {
-			if errors.Is(err, storage.ErrGroupExists) {
+			switch {
+			case errors.Is(err, storage.ErrGroupExists):
 				utils.RenderCommonErr(err, log, w, r, "group already exists", 500)
 				return
-			} else if errors.Is(err, storage.ErrSongExists) {
+			case errors.Is(err, storage.ErrSongExists):
 				utils.RenderCommonErr(err, log, w, r, "song already exists", 500)
 				return
+			case errors.Is(err, storage.ErrSongNotFound):
+				utils.RenderCommonErr(err, log, w, r, "song not found", 500)
+				return
+			default:
+				log.Error("error update data", logger.Err(err))
+				w.WriteHeader(http.StatusInternalServerError)
+				render.JSON(w, r, resp.Error("internal server error"))
+				return
 			}
-			log.Error("error update data", logger.Err(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			render.JSON(w, r, resp.Error("internal server error"))
-			return
+
 		}
 
 		log.Info("Song is updated")

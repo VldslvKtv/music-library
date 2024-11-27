@@ -235,6 +235,15 @@ func (s *Storage) DeleteSong(ctx context.Context, idSong int) error {
 func (s *Storage) PatchSong(ctx context.Context, idSong int, data models.Data) error {
 	const op = "storage.pg.PatchSong"
 
+	var exists bool
+	err := s.DB.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM songs WHERE id = $1)", idSong).Scan(&exists)
+	if err != nil {
+		return fmt.Errorf("%s: failed to check song existence: %w", op, err)
+	}
+	if !exists {
+		return fmt.Errorf("%s: song id does not exist %w", op, storage.ErrSongNotFound)
+	}
+
 	tx, err := s.DB.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("%s: failed to begin transaction: %w", op, err)

@@ -10,8 +10,8 @@ type Data struct {
 }
 
 type SongAndGroup struct {
-	Group string `json:"group,omitempty"`
-	Song  string `json:"song,omitempty"`
+	Group string `json:"group,omitempty" validate:"required"`
+	Song  string `json:"song,omitempty" validate:"required"`
 }
 
 type SongDetails struct {
